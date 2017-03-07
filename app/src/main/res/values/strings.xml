@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">RxCountryProvider</string>
+    <string name="rationale_location">Let me use location</string>
+</resources>
