@@ -57,7 +57,6 @@ public class CurrentCountryManager
                     int value2 = countryProvider2.getProviderType().getValue();
                     return value1 > value2 ? countryProvider : countryProvider2;
                 })
-                .observeOn(AndroidSchedulers.mainThread())
                 .distinctUntilChanged()
                 .onErrorReturn(null);
     }
@@ -68,11 +67,11 @@ public class CurrentCountryManager
         {
             TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
             String countryCode = tm.getNetworkCountryIso();
-            return Observable.just(countryCode != null && countryCode.length() > 0 ? new CountryProvider(countryCode.toUpperCase(), CountryProviderType.NETWORK_PROVIDER) : null);
+            return countryCode != null && countryCode.length() > 0 ? Observable.just(new CountryProvider(countryCode.toUpperCase(), CountryProviderType.NETWORK_PROVIDER)) : Observable.empty();
         }
         catch (Exception e)
         {
-            return Observable.just(null);
+            return Observable.empty();
         }
     }
 
@@ -82,12 +81,10 @@ public class CurrentCountryManager
         if (!EasyPermissions.hasPermissions(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
                 || !LocationService.isLocationServicesAvailable(mContext))
         {
-            return Observable.just(null);
+            return Observable.empty();
         }
 
         return mLocationService.getLocationObservable()
-                .subscribeOn((Schedulers.io()))
-                .observeOn(AndroidSchedulers.mainThread())
                 .first()
                 .flatMap(location1 ->
                         mLocationService.getReverseGeocodeObservable(location1)
@@ -102,13 +99,11 @@ public class CurrentCountryManager
                 {
                     if (addresses != null && addresses.size() > 0)
                     {
-                        String cCode = addresses.get(0).getCountryCode();
-                        return cCode != null && cCode.length() > 0 ? new CountryProvider(cCode, CountryProviderType.LOCATION) : null;
+                        String countryCode = addresses.get(0).getCountryCode();
+                        return countryCode != null && countryCode.length() > 0 ? new CountryProvider(countryCode, CountryProviderType.LOCATION) : null;
                     }
                     return null;
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+                });
     }
 
 
